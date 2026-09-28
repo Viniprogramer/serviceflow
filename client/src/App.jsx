@@ -103,6 +103,7 @@ export default function App() {
   const [services, setServices] = useState([]);
   const [equipments, setEquipments] = useState([]);
   const [workOrders, setWorkOrders] = useState([]);
+  const [selectedOrder, setSelectedOrder] = useState(null);
 
   const [newClient, setNewClient] = useState({ name: '', contact: '', phone: '' });
   const [newTech, setNewTech] = useState({ name: '', specialty: '' });
@@ -114,6 +115,11 @@ export default function App() {
 
   const openOrders = useMemo(() => workOrders.filter((o) => o.status !== 'COMPLETED' && o.status !== 'CANCELED').length, [workOrders]);
   const doneOrders = useMemo(() => workOrders.filter((o) => o.status === 'COMPLETED').length, [workOrders]);
+
+  const clientsById = useMemo(() => Object.fromEntries(clients.map((item) => [item.id, item])), [clients]);
+  const techniciansById = useMemo(() => Object.fromEntries(technicians.map((item) => [item.id, item])), [technicians]);
+  const servicesById = useMemo(() => Object.fromEntries(services.map((item) => [item.id, item])), [services]);
+  const equipmentsById = useMemo(() => Object.fromEntries(equipments.map((item) => [item.id, item])), [equipments]);
 
   async function loadAll() {
     const [c, te, se, eq, wo, me] = await Promise.all([
@@ -184,6 +190,7 @@ export default function App() {
     clearToken();
     setProfile(null);
     setTab(0);
+    setSelectedOrder(null);
   }
 
   if (!profile) {
@@ -354,17 +361,28 @@ export default function App() {
 
             <div className="order-list">
               {workOrders.map((order) => (
-                <article key={order.id} className="order-card">
+                <article key={order.id} className="order-card order-card-clickable" onClick={() => setSelectedOrder(order)}>
                   <div className="order-head">
                     <h3>#{order.id.slice(0, 8)} • {order.description || 'Service order'}</h3>
                     <span className={`badge ${order.status.toLowerCase()}`}>{statusLabel(order.status, locale)}</span>
                   </div>
                   <p>{new Date(order.createdAt).toLocaleString()}</p>
                   <div className="order-actions">
-                    <select value={order.status} onChange={(e) => updateStatus(order.id, e.target.value)}>
+                    <select
+                      value={order.status}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e) => updateStatus(order.id, e.target.value)}
+                    >
                       {statusOptions.map((s) => <option key={s} value={s}>{statusLabel(s, locale)}</option>)}
                     </select>
-                    <button onClick={() => openPhotoPicker(order.id)}>{t.addPhoto}</button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openPhotoPicker(order.id);
+                      }}
+                    >
+                      {t.addPhoto}
+                    </button>
                     <input
                       id={`photo-input-${order.id}`}
                       type="file"
@@ -382,6 +400,18 @@ export default function App() {
               ))}
             </div>
           </section>
+        )}
+
+        {selectedOrder && (
+          <WorkOrderDetails
+            order={selectedOrder}
+            locale={locale}
+            clientsById={clientsById}
+            techniciansById={techniciansById}
+            servicesById={servicesById}
+            equipmentsById={equipmentsById}
+            onClose={() => setSelectedOrder(null)}
+          />
         )}
       </main>
     </div>
@@ -426,5 +456,74 @@ function Overview({ workOrders, locale }) {
         ))}
       </div>
     </section>
+  );
+}
+
+function WorkOrderDetails({ order, locale, clientsById, techniciansById, servicesById, equipmentsById, onClose }) {
+  const isPt = locale === 'pt-BR';
+  const client = clientsById[order.clientId] ?? order.client;
+  const technician = techniciansById[order.technicianId] ?? order.technician;
+  const service = servicesById[order.serviceId] ?? order.service;
+  const equipment = equipmentsById[order.equipmentId] ?? order.equipment;
+
+  const detailRows = [
+    { label: isPt ? 'Numero da OS' : 'Work Order Number', value: `#${order.id.slice(0, 8)}` },
+    { label: isPt ? 'Status' : 'Status', value: statusLabel(order.status, locale) },
+    { label: isPt ? 'Abertura' : 'Opened At', value: new Date(order.createdAt).toLocaleString() },
+    { label: isPt ? 'Descricao' : 'Description', value: order.description || (isPt ? 'Nao informada' : 'Not informed') },
+  ];
+
+  return (
+    <div className="order-modal-backdrop" onClick={onClose}>
+      <aside className="order-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="order-modal-head">
+          <h3>{isPt ? 'Detalhes da Ordem de Servico' : 'Work Order Details'}</h3>
+          <button className="ghost-btn" onClick={onClose}>{isPt ? 'Fechar' : 'Close'}</button>
+        </div>
+
+        <div className="order-modal-grid">
+          {detailRows.map((row) => (
+            <article key={row.label} className="order-detail-card">
+              <small>{row.label}</small>
+              <strong>{row.value}</strong>
+            </article>
+          ))}
+        </div>
+
+        <div className="order-modal-section">
+          <h4>{isPt ? 'Cliente' : 'Client'}</h4>
+          <p>{client?.name || '-'}</p>
+          <p>{client?.contact || (isPt ? 'Contato nao informado' : 'Contact not informed')}</p>
+          <p>{client?.phone || (isPt ? 'Telefone nao informado' : 'Phone not informed')}</p>
+        </div>
+
+        <div className="order-modal-section">
+          <h4>{isPt ? 'Tecnico e Servico' : 'Technician and Service'}</h4>
+          <p>{isPt ? 'Tecnico:' : 'Technician:'} {technician?.name || '-'}</p>
+          <p>{isPt ? 'Especialidade:' : 'Specialty:'} {technician?.specialty || '-'}</p>
+          <p>{isPt ? 'Servico:' : 'Service:'} {service?.title || '-'}</p>
+          <p>{isPt ? 'Valor base:' : 'Base price:'} {service?.basePrice != null ? `$${service.basePrice}` : '-'}</p>
+        </div>
+
+        <div className="order-modal-section">
+          <h4>{isPt ? 'Equipamento' : 'Equipment'}</h4>
+          <p>{equipment?.name || '-'}</p>
+          <p>{isPt ? 'Serial:' : 'Serial:'} {equipment?.serialNumber || '-'}</p>
+        </div>
+
+        <div className="order-modal-section">
+          <h4>{isPt ? 'Fotos anexadas' : 'Attached Photos'}</h4>
+          {order.photos?.length ? (
+            <ul className="order-photo-list">
+              {order.photos.map((photo) => (
+                <li key={photo.id}>{photo.fileName}</li>
+              ))}
+            </ul>
+          ) : (
+            <p>{isPt ? 'Sem fotos anexadas ainda.' : 'No photos attached yet.'}</p>
+          )}
+        </div>
+      </aside>
+    </div>
   );
 }

@@ -214,6 +214,16 @@ button:hover {
   background: var(--surface);
 }
 
+.order-card-clickable {
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.order-card-clickable:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(18, 36, 29, 0.1);
+}
+
 .order-head {
   display: flex;
   align-items: center;
@@ -264,6 +274,83 @@ button:hover {
   color: #6b736e;
 }
 
+.order-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(22, 27, 24, 0.45);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 50;
+  padding: 16px;
+}
+
+.order-modal {
+  width: min(920px, 100%);
+  max-height: 90vh;
+  overflow: auto;
+  background: #fffdf8;
+  border: 1px solid #d2cab8;
+  border-radius: 16px;
+  padding: 16px;
+}
+
+.order-modal-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.order-modal-head h3 {
+  margin: 0;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.order-modal-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.order-detail-card {
+  border: 1px solid #d9d0be;
+  border-radius: 12px;
+  background: #f8f4ea;
+  padding: 10px;
+  display: grid;
+  gap: 4px;
+}
+
+.order-detail-card small,
+.order-modal-section p {
+  color: #4f5953;
+}
+
+.order-detail-card strong {
+  color: #1f2421;
+}
+
+.order-modal-section {
+  border-top: 1px solid #dcd3c1;
+  margin-top: 12px;
+  padding-top: 10px;
+}
+
+.order-modal-section h4 {
+  margin: 0 0 6px;
+}
+
+.order-modal-section p {
+  margin: 4px 0;
+}
+
+.order-photo-list {
+  margin: 0;
+  padding-left: 20px;
+}
+
 @media (max-width: 740px) {
   .app-shell {
     padding: 18px;
@@ -290,6 +377,10 @@ button:hover {
   .order-head {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .order-modal-grid {
+    grid-template-columns: 1fr;
   }
 }
 
