@@ -85,6 +85,9 @@ model WorkOrderPhoto {
   id           String    @id @default(uuid())
   workOrderId  String
   fileName     String
+  description  String    @default("")
+  mimeType     String?
+  dataBase64   String?
   uploadedAt   DateTime  @default(now())
   workOrder    WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
 }

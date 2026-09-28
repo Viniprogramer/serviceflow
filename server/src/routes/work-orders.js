@@ -55,10 +55,19 @@ workOrdersRouter.post('/work-orders/:id/photos', upload.single('photo'), async (
   const order = await db.workOrder.findUnique({ where: { id: req.params.id } });
   if (!order) return res.status(404).json({ error: 'Work order not found' });
 
+  if (!req.file) {
+    return res.status(400).json({ error: 'Photo file is required' });
+  }
+
+  const description = (req.body.description ?? '').toString().trim();
+
   const photo = await db.workOrderPhoto.create({
     data: {
       workOrderId: req.params.id,
-      fileName: req.file?.originalname ?? req.body.fileName ?? `photo-${Date.now()}.jpg`,
+      fileName: req.file.originalname ?? req.body.fileName ?? `photo-${Date.now()}.jpg`,
+      description,
+      mimeType: req.file.mimetype,
+      dataBase64: req.file.buffer.toString('base64'),
     },
   });
 

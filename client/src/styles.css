@@ -351,6 +351,40 @@ button:hover {
   padding-left: 20px;
 }
 
+.order-photo-item {
+  margin-bottom: 12px;
+  list-style: none;
+  border: 1px solid #d9d0be;
+  border-radius: 12px;
+  padding: 10px;
+  background: #fff;
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 10px;
+  align-items: start;
+}
+
+.order-photo-preview,
+.order-photo-fallback {
+  width: 110px;
+  height: 110px;
+  border-radius: 10px;
+  border: 1px solid #d7cfbf;
+  object-fit: cover;
+  background: #f3eee2;
+}
+
+.order-photo-fallback {
+  display: grid;
+  place-items: center;
+  color: #6b736e;
+  font-size: 0.82rem;
+}
+
+.order-photo-item p {
+  margin: 6px 0 0;
+}
+
 @media (max-width: 740px) {
   .app-shell {
     padding: 18px;
@@ -381,6 +415,16 @@ button:hover {
 
   .order-modal-grid {
     grid-template-columns: 1fr;
+  }
+
+  .order-photo-item {
+    grid-template-columns: 1fr;
+  }
+
+  .order-photo-preview,
+  .order-photo-fallback {
+    width: 100%;
+    height: 170px;
   }
 }
 

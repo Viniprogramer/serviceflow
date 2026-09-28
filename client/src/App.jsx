@@ -104,6 +104,7 @@ export default function App() {
   const [equipments, setEquipments] = useState([]);
   const [workOrders, setWorkOrders] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [photoNotes, setPhotoNotes] = useState({});
 
   const [newClient, setNewClient] = useState({ name: '', contact: '', phone: '' });
   const [newTech, setNewTech] = useState({ name: '', specialty: '' });
@@ -141,6 +142,12 @@ export default function App() {
       });
     }
   }, []);
+
+  useEffect(() => {
+    if (!selectedOrder) return;
+    const fresh = workOrders.find((item) => item.id === selectedOrder.id);
+    if (fresh) setSelectedOrder(fresh);
+  }, [workOrders, selectedOrder]);
 
   async function submitAuth() {
     setAuthError('');
@@ -180,9 +187,16 @@ export default function App() {
 
   async function addPhoto(orderId, file) {
     if (!file) return;
+    const description = (photoNotes[orderId] ?? '').trim();
+    if (!description) {
+      alert(locale === 'pt-BR' ? 'Informe uma descricao para a foto.' : 'Please add a description for the photo.');
+      return;
+    }
     const form = new FormData();
     form.append('photo', file, file.name);
+    form.append('description', description);
     await req(`/work-orders/${orderId}/photos`, { method: 'POST', body: form });
+    setPhotoNotes((prev) => ({ ...prev, [orderId]: '' }));
     await loadAll();
   }
 
@@ -375,6 +389,12 @@ export default function App() {
                     >
                       {statusOptions.map((s) => <option key={s} value={s}>{statusLabel(s, locale)}</option>)}
                     </select>
+                    <input
+                      placeholder={locale === 'pt-BR' ? 'Descricao da foto' : 'Photo description'}
+                      value={photoNotes[order.id] ?? ''}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e) => setPhotoNotes((prev) => ({ ...prev, [order.id]: e.target.value }))}
+                    />
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -516,7 +536,21 @@ function WorkOrderDetails({ order, locale, clientsById, techniciansById, service
           {order.photos?.length ? (
             <ul className="order-photo-list">
               {order.photos.map((photo) => (
-                <li key={photo.id}>{photo.fileName}</li>
+                <li key={photo.id} className="order-photo-item">
+                  {photo.dataBase64 && photo.mimeType ? (
+                    <img
+                      src={`data:${photo.mimeType};base64,${photo.dataBase64}`}
+                      alt={photo.description || photo.fileName}
+                      className="order-photo-preview"
+                    />
+                  ) : (
+                    <div className="order-photo-fallback">{isPt ? 'Sem preview' : 'No preview'}</div>
+                  )}
+                  <div>
+                    <strong>{photo.fileName}</strong>
+                    <p>{photo.description || (isPt ? 'Sem descricao' : 'No description')}</p>
+                  </div>
+                </li>
               ))}
             </ul>
           ) : (
