@@ -1,12 +1,23 @@
 import 'dotenv/config';
 import cors from 'cors';
 import express from 'express';
+import { hashPassword } from './lib/auth.js';
+import { db } from './lib/db.js';
 import { authRouter } from './routes/auth.js';
 import { catalogRouter } from './routes/catalog.js';
 import { workOrdersRouter } from './routes/work-orders.js';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+
+async function ensureDemoAdmin() {
+  const passwordHash = await hashPassword('Service123!');
+  await db.user.upsert({
+    where: { email: 'admin@serviceflow.io' },
+    update: { name: 'Service Admin', passwordHash, role: 'ADMIN' },
+    create: { name: 'Service Admin', email: 'admin@serviceflow.io', passwordHash, role: 'ADMIN' },
+  });
+}
 
 app.use(cors());
 app.use(express.json());
@@ -24,6 +35,13 @@ app.use((error, _req, res, _next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-app.listen(PORT, () => {
-  console.log(`ServiceFlow API running on http://localhost:${PORT}`);
-});
+ensureDemoAdmin()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`ServiceFlow API running on http://localhost:${PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.error('Failed to initialize demo admin:', error);
+    process.exit(1);
+  });
