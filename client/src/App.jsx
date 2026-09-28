@@ -167,9 +167,15 @@ export default function App() {
     await loadAll();
   }
 
-  async function addPhoto(orderId) {
+  function openPhotoPicker(orderId) {
+    const input = document.getElementById(`photo-input-${orderId}`);
+    if (input) input.click();
+  }
+
+  async function addPhoto(orderId, file) {
+    if (!file) return;
     const form = new FormData();
-    form.append('fileName', `photo-${Date.now()}.jpg`);
+    form.append('photo', file, file.name);
     await req(`/work-orders/${orderId}/photos`, { method: 'POST', body: form });
     await loadAll();
   }
@@ -358,7 +364,18 @@ export default function App() {
                     <select value={order.status} onChange={(e) => updateStatus(order.id, e.target.value)}>
                       {statusOptions.map((s) => <option key={s} value={s}>{statusLabel(s, locale)}</option>)}
                     </select>
-                    <button onClick={() => addPhoto(order.id)}>{t.addPhoto}</button>
+                    <button onClick={() => openPhotoPicker(order.id)}>{t.addPhoto}</button>
+                    <input
+                      id={`photo-input-${order.id}`}
+                      type="file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        addPhoto(order.id, file);
+                        e.target.value = '';
+                      }}
+                    />
                   </div>
                   <small>Photos: {order.photos.length}</small>
                 </article>
